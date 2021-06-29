@@ -5,9 +5,12 @@ navbar:
   left:
   - text: "Home"
     icon: fa-home
-    href: _site.index.html
+    href: index.html
   - text: "GIS Work"
     icon: fa-globe-americas
     href: geog13.html
+  - text: CV
+    icon: fa-pagelines
+    href: cv.html
   html_document:
     theme: sandstone
