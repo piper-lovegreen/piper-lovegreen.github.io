@@ -1,0 +1,10 @@
+---
+title: "About Me"
+---
+
+<center>
+# Hello, I am Piper Lovegreen
+<center/>
+
+I am currently studying Physical Geography at the University of California, Santa Barbara. I started my own swimsuit company, Piper Swimwear, which I ran for roughly 5 years. After 1 year of running my own business I decided to go back to school at Santa Barbara City College. I received my A.A. in Entrepreneurship there, as well as winning third place in the 2017 New Venture Challenge for Piper Swimwear. As much as I loved running my own business I was very drawn to all of my STEM classes. I could not be happier to be a Physical Geography major at UCSB. This website is to showcase my work. 
+![37.7459 N, 119.5332 W](/Users/piperlovegreen/Desktop/github/piper-lovegreen.github.io/img/halfdome.jpg)

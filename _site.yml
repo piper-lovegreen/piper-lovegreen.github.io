@@ -1,0 +1,14 @@
+name: "Piper Lovegreen's Portfolio"
+output_dir: "."
+navbar:
+  title: "Piper Lovegreen's Portfolio"
+  left:
+  - text: "Home"
+    icon: fa-home
+    href: _site.index.html
+  - text: "GIS Work"
+    icon: fa-globe-americas
+    href: file:///Users/piperlovegreen/Desktop/github/piper-lovegreen.github.io/geog13.html
+output:
+  html_document:
+    theme: sandstone
