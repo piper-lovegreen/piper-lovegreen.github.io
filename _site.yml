@@ -8,7 +8,6 @@ navbar:
     href: _site.index.html
   - text: "GIS Work"
     icon: fa-globe-americas
-    href: file:///Users/piperlovegreen/Desktop/github/piper-lovegreen.github.io/geog13.html
-output:
+    href: geog13.html
   html_document:
     theme: sandstone
