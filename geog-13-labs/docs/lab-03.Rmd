@@ -1,0 +1,351 @@
+---
+title: "Geography 13"
+author: "[Piper Lovegreen] (https://piper-lovegreen.github.io/)"
+subtitle: 'Lab 03: Distances and the Border Zone'
+output:
+  html_document:
+    theme: journal
+---
+```{r}
+# SPDS
+library(tidyverse)
+library(sf)
+library(units)
+library(readxl)
+
+# Data
+library(USAboundaries)
+library(rnaturalearth)
+
+# Visualization
+library(gghighlight)
+library(ggrepel)
+library(knitr)
+```
+
+# Question 1 
+## 1.1 Define a Projection- North America Equidistant Conic
+### Equidistant preserves distance
+```{r}
+eqdc = '+proj=eqdc +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs'
+```
+## 1.2 Get USA State Boundaries 
+```{r}
+conus= USAboundaries::us_states(resolution = "low") %>% 
+  filter(!name %in% c("Hawaii", "Alaska", "Puerto Rico")) %>% 
+  st_transform(eqdc)
+```
+## 1.3 Get County Boundaries for Mexico, USA, and Canada
+```{r}
+countries= rnaturalearth::countries110 %>% 
+  st_as_sf(countries) %>%  
+  filter(admin %in% c("United States of America", "Mexico", "Canada")) %>% 
+  st_transform(eqdc)
+```
+## 1.4 Get City Locations from the CSV File 
+```{r}
+
+url = 'https://raw.githubusercontent.com/mikejohnson51/exercise-04/master/data/uscities.csv'
+us_cities = readr::read_csv(url) %>% 
+  filter(!state_name %in% c("Hawaii", "Puerto Rico", "Alaska")) %>% 
+  st_as_sf(coords= c("lng", "lat"), crs= 4326) %>% 
+  st_transform(eqdc)
+
+```
+
+# Question 2 
+## 2.1 Distance to USA Border (Coastline or National) [km]
+```{r}
+conus = USAboundaries::us_states() %>%
+  filter(!state_name %in% c("Puerto Rico",
+                            "Alaska",
+                            "Hawaii")) 
+conus <- st_transform(conus, eqdc)
+
+us_border = st_union(conus) %>%
+    st_cast("MULTILINESTRING")
+plot(us_border)
+
+border_distances= us_cities %>% 
+  mutate(distance_border= st_distance(., us_border),
+  distance_border= units::set_units(distance_border, "km"),
+  distance_border= as.numeric(distance_border))
+
+table2.1= border_distances %>% 
+  select("city", "state_name", "distance_border") %>% 
+  slice_max(distance_border, n= 10)  
+
+  
+knitr::kable(table2.1,
+              caption= "10 Furthest Cities from USA Border",
+              col.names= c( "City", "State Name", "Distance to Border [km]", "Longitude and Latitude"),
+             format.args = list(big.mark = ",")) %>% 
+              
+kableExtra::kable_styling("basic", full_width = TRUE, font_size = 14)
+  
+```
+## 2.2 Distance to States [km]
+```{r}
+conus = USAboundaries::us_states() %>%
+  filter(!state_name %in% c("Puerto Rico",
+                            "Alaska",
+                            "Hawaii")) 
+conus <- st_transform(conus, eqdc)
+
+
+state_border=  st_combine(conus) %>%
+    st_cast("MULTILINESTRING")
+plot(state_border)
+
+border_distances_state= us_cities %>% 
+  mutate(statedistance_border= st_distance(., state_border),
+  statedistance_border= units::set_units(statedistance_border, "km"),
+  statedistance_border= as.numeric(statedistance_border))
+
+table2.2= border_distances_state %>% 
+  select( "city", "state_name","statedistance_border") %>% 
+  slice_max(statedistance_border, n= 10)
+
+knitr::kable(table2.2,
+              caption= "Distance from Cities to State Borders",
+              col.names= c("City", "State Name", "Distance to Border[km]", "Longitude and Latitude"),
+              format.args= list(big.mark= ".")) %>% 
+  kableExtra::kable_styling("basic", full_width = TRUE, font_size = 14)
+```
+## 2.3 Distance to Mexico [km]
+```{r}
+mex= countries %>% 
+  filter(admin %in% 'Mexico')
+  
+ mex_border= st_union(mex) %>%
+    st_cast("MULTILINESTRING")
+plot(mex_border)
+
+mex_distance= us_cities %>% 
+  mutate(mex_dis_border=st_distance(., mex),
+         mex_dis_border=units::set_units(mex_dis_border, "km"),
+  mex_dis_border= as.numeric(mex_dis_border))
+
+table2.3= mex_distance %>% 
+  select("city", "state_name", "mex_dis_border") %>% 
+  slice_max(mex_dis_border, n=10)
+
+knitr::kable(table2.3,
+              caption= "Top 10 Furthest Cities from Mexico Border",
+              col.names= c("City", "State Name",  "Distance to Border[km]", "Longitude and Latitude"),
+              format.args= list(big.mark= ".")) %>% 
+kableExtra::kable_styling("basic", full_width = TRUE, font_size = 14)
+       
+
+```
+## 2.4 Distance to Canada [km]
+```{r}
+can= countries %>% 
+  filter(admin %in% 'Canada')
+(can_border = st_union(can) %>%
+    st_cast("MULTILINESTRING"))
+plot(can_border)
+
+can_distance= us_cities %>% 
+  mutate(can_dis_border=st_distance(., can_border),
+         can_dis_border=units::set_units(can_dis_border, "km"),
+  can_dis_border= as.numeric(can_dis_border))
+
+table2.4= can_distance %>% 
+  select("city","state_name","can_dis_border") %>% 
+  slice_max(can_dis_border, n=10)
+
+knitr::kable(table2.4,
+              caption= "Top 10 Furthest Cities from Canada Border",
+              col.names= c("City", "State Name", "Distance to Border[km]", "Longitude and Latitude"),
+              format.args= list(big.mark= ".")) %>% 
+kableExtra::kable_styling("basic", full_width = TRUE, font_size = 14)
+
+
+```
+# Question 3 
+## 3.1 Data
+```{r}
+borders = st_combine(countries) %>%
+    st_cast("MULTILINESTRING")
+plot(borders)
+
+state_border=  st_combine(conus) %>%
+    st_cast("MULTILINESTRING")
+plot(state_border)
+
+max_pop= us_cities %>% 
+  slice_max(population, n= 10)
+
+ggplot() + 
+  geom_sf(data = borders, aes()) + 
+  geom_sf(data=state_border, aes())+
+  geom_sf(data= max_pop, aes(), col="coral1") + 
+  ggrepel::geom_label_repel(
+    data = max_pop,
+    aes(label = city, geometry = geometry),
+    stat = "sf_coordinates",
+    size = 3) +
+  labs(title = "10 Cities with Largest Populations",
+       subtitle =" In the United States") + 
+  ggthemes::theme_map() 
+```
+## 3.2 City Distance from the Border
+```{r}
+borders = st_combine(countries) %>%
+    st_cast("MULTILINESTRING")
+plot(borders)
+
+state_border=  st_combine(conus) %>%
+    st_cast("MULTILINESTRING")
+plot(state_border)
+
+border_distances= us_cities %>% 
+  mutate(distance_border= st_distance(., us_border),
+  distance_border= units::set_units(distance_border, "km"),
+  distance_border= as.numeric(distance_border))
+
+top_5= border_distances %>% 
+  slice_max(distance_border, n=5)
+
+ggplot() + 
+  geom_sf(data = border_distances, aes(col= distance_border)) +
+  scale_color_gradient(low= "yellowgreen", high= "red1")+
+  geom_sf(data=top_5, aes(), col= "red4")+
+  geom_sf(data = us_border, aes()) + 
+  ggrepel::geom_label_repel(
+    data = top_5,
+    aes(label = city, geometry = geometry),
+    stat = "sf_coordinates",
+    size = 3) +
+  labs(title = "5 Cities Furthest from US National Border",
+       col= "Distance to Border [km]") + 
+  ggthemes::theme_map()+
+theme(legend.position = "right")
+  
+```
+## 3.3 City Distnace from Nearest State
+```{r}
+state_border=  st_combine(conus) %>%
+    st_cast("MULTILINESTRING")
+plot(state_border)
+
+border_distances_state= us_cities %>% 
+  mutate(statedistance_border= st_distance(., state_border),
+  statedistance_border= units::set_units(statedistance_border, "km"),
+  statedistance_border= as.numeric(statedistance_border))
+ggplot() + 
+  geom_sf(data = border_distances_state, aes(col= statedistance_border)) +
+  scale_color_gradient(low= "yellowgreen", high= "red1")+
+  geom_sf(data=top_5, aes(), col= "red4")+
+  geom_sf(data = state_border, aes()) + 
+  ggrepel::geom_label_repel(
+    data = top_5,
+    aes(label = city, geometry = geometry),
+    stat = "sf_coordinates",
+    size = 3) +
+  labs(title = "City Distance from State Border",
+         subtitle= "5 Cities Furthest from US National Border",
+       col= "Distance to State Border [km]") + 
+  ggthemes::theme_map()+
+theme(legend.position = "right")
+```
+## Equidistance Boundary from Mexico and Canada
+```{r}
+city3.4= us_cities %>% 
+  select(city, state_name, population, geometry)
+
+uscities3.4= city3.4 %>% 
+  filter(!state_name %in% c("Alaska", "Hawaii", "Puerto Rico")) %>% 
+  st_as_sf(coords= c("lng", "lat"), crs= 4326) %>% 
+    st_transform(eqdc)
+  
+
+mex_can_dis= uscities3.4 %>% 
+  mutate(can_dis= st_distance(uscities3.4, can_border),
+         can_dis= units::set_units(can_dis, "km"),
+         can_dis= as.numeric(can_dis)) %>% 
+  ungroup() %>% 
+  mutate(mex_dis= st_distance(uscities3.4, mex_border),
+         mex_dis= units::set_units(mex_dis, "km"),
+         mex_dis= as.numeric(mex_dis)) %>% 
+  ungroup()
+
+ab= mex_can_dis %>%   
+  mutate(ab_dis= abs(can_dis - mex_dis)) %>% 
+  select(city, state_name, population, can_dis, mex_dis, ab_dis)
+
+pop_3.4 <- ab %>% 
+  filter(ab_dis <= 100) %>% 
+  slice_max(population, n=5)
+
+
+ggplot() + 
+  geom_sf(data = borders, aes()) + 
+  geom_sf(data=state_border, aes())+
+  geom_sf(data= ab, aes(col= ab_dis)) +
+  gghighlight::gghighlight(ab_dis <= 100)+
+geom_sf(data= pop_3.4, aes(), col= "coral1") +
+  ggrepel::geom_label_repel(
+    data = pop_3.4,
+    aes(label = city, geometry = geometry),
+    stat = "sf_coordinates",
+    size = 3) +
+  labs(title = "US Cities 100km from Mexico and Canada Border",
+       subtitle ="5 Most Populous Cities within this Zone") + 
+  ggthemes::theme_map() 
+```
+# Question 4 
+## 4.1 Quantifing Border Zone 
+```{r}
+border_distances= us_cities %>% 
+  mutate(distance_border= st_distance(., us_border),
+  distance_border= units::set_units(distance_border, "km"),
+  distance_border= as.numeric(distance_border)) %>% 
+  filter(distance_border <= 160) %>% 
+  select(city, state_name, population, distance_border, geometry)  
+  
+ 
+city_100zone= nrow(border_distances)
+pop_tot= sum(border_distances$population)
+pop_percent= (pop_tot/ sum(us_cities$population) *100) %>% 
+  round(digits=2)
+ 
+table4.1= data.frame(Description= c("Number of Cities within 100mi Zone", "Total Population within 100mi Zone", "Percent of Continental US within 100mi Zone"), Numbers= c(city_100zone, pop_tot, pop_percent))
+knitr::kable(table4.1,
+              caption= "Information about 100 mile Zone of US Border") %>% 
+kableExtra::kable_styling("basic", full_width = TRUE, font_size = 14)
+
+
+```
+### 4.2 Mapping Border Zone 
+```{r}
+city_pop= border_distances %>% 
+  filter(distance_border <= 160) %>% 
+  group_by(state_name) %>% 
+  slice_max(population, n= 10)
+
+buffer100= border_distances %>% 
+  filter(distance_border <= 160) 
+
+
+
+ggplot()+
+  geom_sf(data= state_border, aes())+
+    geom_sf(data= buffer100, aes(col= distance_border))+
+  scale_color_gradient(low= "orange", high= "darkred")+
+  ggrepel::geom_label_repel(
+    data = city_pop,
+    aes(label = city, geometry = geometry),
+    stat = "sf_coordinates",
+    size = 3) +
+  labs(title = "Top 10 Most Populous Cities in 100mile Zone",
+       col= "Distance from Border") + 
+  ggthemes::theme_map()+
+theme(legend.position = "right")
+```
+
+
+
+
+

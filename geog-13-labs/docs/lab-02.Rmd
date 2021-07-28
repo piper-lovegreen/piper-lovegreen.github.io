@@ -1,0 +1,153 @@
+---
+title: "Geography 13"
+author: "[Piper Lovegreen] (piper-lovegreen.github.io/)"
+subtitle: 'Lab 02: COVID-19 Pandemic'
+output:
+  html_document:
+    theme: journal
+---
+
+
+# Libraries
+```{r} 
+library(tidyverse)
+library(knitr)
+library(readxl)
+library(zoo)
+```
+
+# DATA 
+
+```{r}
+url= 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv'
+covid= read_csv(url)
+
+landDate= read_csv("/Users/piperlovegreen/Desktop/github/geog-13-labs/data/landdata-states.csv")
+
+popEst= read_excel("/Users/piperlovegreen/Desktop/github/geog-13-labs/data/PopulationEstimates.xls", skip=2)
+
+```
+
+#Question 1 Part I
+
+```{r}
+table_1 = covid %>% 
+ filter(state == "California") %>% 
+ group_by(county, state) %>% 
+ summarise(total_cases= sum(cases)) %>% 
+ ungroup() %>%  
+ slice_max(total_cases, n=5)
+
+table_2 = covid %>% 
+ filter(state == "California") %>% 
+ group_by(county, state) %>% 
+ filter(date> "2021-06-27") %>% 
+ summarise(min_cases= min(cases), max_cases= max(cases)) %>% 
+ mutate(diff = max_cases-min_cases) %>% 
+ ungroup() %>%  
+ slice_max(diff, n=5)  
+ 
+ 
+knitr::kable(table_1,
+              caption= "Cumulative Covid-19 Cases in California",
+              col.names= c("County", "State", "Cases"),
+              format.args= list(big.mark= "."))
+
+knitr::kable(table_2,
+              caption= "New Covid-19 Cases in California",
+              col.names= c("County", "State", "Minumum Cases", "Maximum Cases", "Difference"),
+              format.args= list(big.mark= ".")) 
+
+```
+# Question 1 Part II
+```{r}
+pop= popEst %>% 
+  select(fips = FIPStxt, population= "POP_ESTIMATE_2019") 
+ 
+  
+copop_join= inner_join(covid, pop, by = 'fips')
+
+
+table_1.1 = copop_join %>% 
+ filter(state == "California", date== max(date)) %>% 
+ mutate(perCapita= cases/population) %>% 
+ slice_max(perCapita, n=5)
+
+
+table_2.1 = copop_join %>% 
+ filter(state == "California") %>% 
+ group_by(county, state) %>% 
+ filter(date > (max(date)-14)) %>% 
+ summarise(min_cases= min(cases), max_cases= max(cases), population = mean(population)) %>% 
+ mutate(diff = max_cases-min_cases) %>% 
+ ungroup() %>%  
+ mutate(perCap = diff/population) %>% 
+ slice_max(perCap, n=5)
+
+
+
+
+knitr::kable(table_1.1,
+              caption= "Cumulative Covid-19 Cases in California Per Capita",
+              col.names= c("county", "cases"),
+              format.args= list(big.mark= ".")) 
+
+knitr::kable(table_2.1,
+              caption= "New Covid-19 Cases in California Per Capita",
+              col.names= c("county", "cases"),
+              format.args= list(big.mark= ".")) %>% 
+              
+              
+
+```
+
+# Question 2 Part I
+
+```{r}
+states.of.interest <- c("New York", "California", "Louisiana", "Florida")
+StateLevel <- covid %>% 
+ filter(state %in% states.of.interest) %>% 
+ group_by(state, date) %>% 
+ summarise(cases= sum(cases, na.rm= TRUE)) %>% 
+ mutate(daily_new_cases= cases-lag(cases), RollMean7= rollmean(daily_new_cases, 7,fill= NA, align="right"))
+
+ggplot(data= StateLevel, aes(x=date, y= daily_new_cases)) +
+ geom_line(aes(col=state)) +
+ facet_wrap(~state)+
+ labs(x= "Date", y=" Daily New Cases",
+          title = "Covid-19 Cases in CA, FL, LA, NY",
+       subtitle = "Data from NY Times",
+       caption = "Lab 02") +
+  theme(axis.text.x = element_text(angle = 90))
+      
+
+
+```
+# Question 2 Part II
+```{r}
+states.of.interest <- c("New York", "California", "Louisiana", "Florida")
+stateDC <- copop_join %>% 
+ filter(state %in% states.of.interest) %>% 
+ group_by(state, date) %>% 
+ summarise(cases= sum(cases, na.rm= TRUE)) %>% 
+ mutate(daily_new_cases= cases-lag(cases), RollMean7= rollmean(daily_new_cases, 7,fill= NA, align="right")) %>% 
+ ungroup() 
+
+
+copop_join %>% 
+  filter(population) %>% 
+  mutate(PerCapita= daily_new_cases/population)
+
+
+ggplot(data= cov_pop, aes(x=date, y= PerCapita)) +
+ geom_line(aes(col=state)) +
+ facet_wrap(~state)+
+ labs(x= "Date", y=" Covid-19 Cases per Capita",
+          title = "Covid-19 Cases per Capita in CA, FL, LA, NY",
+       subtitle = "Data from NY Times",
+       caption = "Lab 02") +
+  theme(axis.text.x = element_text(angle = 90))
+    
+```
+
+# Question 3 (Extra Credit)

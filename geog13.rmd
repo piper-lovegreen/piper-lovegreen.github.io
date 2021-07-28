@@ -9,3 +9,11 @@ This is my portfolio. This began with a GIS course based in R, in summer 2021. H
 - In this assignment I learned how to create a website through github using R
 - I learned how to troubleshoot when errors occurred 
 - I am now able capable of customizing a website 
+
+
+#### [2.Covid-19](lab-02.html)
+Tools for this lab:
+
+#### [3. 100 mile Zone around US Border](geog-13-labs/docs/lab-03.html)
+Tools for this lab:
+

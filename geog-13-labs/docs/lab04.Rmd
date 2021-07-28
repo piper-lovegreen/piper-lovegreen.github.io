@@ -1,0 +1,104 @@
+---
+title: "Geography 13"
+author: "[Piper Lovegreen] (https://piper-lovegreen.github.io/)"
+subtitle: 'Lab 04: Tesselations, Point-in-Polygon'
+output:
+  html_document:
+    theme: journal
+---
+
+
+
+
+```{r}
+library(tidyverse)
+library(sf)
+library(USAboundaries)
+
+library(kintr)
+library(leaflet)
+library(ggplot2)
+library(gghighlight)
+library(readxl)
+
+```
+
+# Question 1 
+```{r}
+counties= USAboundaries::us_counties() %>% 
+  filter(!state_name %in% c("Hawaii", "Puerto Rico", "Alaska")) %>% 
+  st_transform(5070) %>% 
+  st_as_sf()
+
+county_centroids = counties %>% 
+  st_centroid()
+nrow(county_centroids)
+
+centroid_union = county_centroids %>% 
+  st_union()
+centroid_union
+
+
+  
+```
+1.3
+```{r}
+
+boundary= counties %>% 
+  st_union() 
+
+voronois= st_voronoi(centroid_union) %>% 
+   st_cast() %>%
+  st_as_sf() %>% 
+  mutate(ID= 1:n()) %>% 
+  st_intersection(boundary)
+
+plot(voronois)
+
+
+```
+
+question 3
+```{r}
+greeting= function(name){
+  cast("Hi my name is piper", name)
+}
+
+#name is the variable you are interested in brackets are what you are trying to do to that function 
+```
+```{r warning=FALSE}
+NID = read_excel("../data/NID2019_U.xlsx") %>% 
+  filter(!is.na(LONGITUDE)) %>% 
+  filter(!is.na(LATITUDE)) %>% 
+  st_as_sf(coords= c("LONGITUDE", "LATITUDE"), crs= 4326) %>% 
+  st_transform(5070)
+  
+NID
+```
+
+3.2
+```{r}
+PIP= function(points, polygons, ID){
+  st_join(polygons, points) %>% 
+   dplyr::count(.data[['ID']])
+  }
+
+VOR= PIP(NID, voronois, 'ID')
+
+
+```
+
+```{r}
+plot_PIP= function(data, title ){
+  ggplot()+
+    geom_sf(data= data, aes(fill=n), size=.2, col=NA)+
+    scale_fill_viridis_c()+
+    theme_void()+
+    labs(title=title, caption= sum(n))
+  #figure out the caption part it is in question 
+}
+plot_PIP(Vor, "Voronoi Tessellation")
+```
+
+
+
