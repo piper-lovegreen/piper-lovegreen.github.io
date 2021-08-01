@@ -17,8 +17,8 @@ August 2014-May 2017
 
 ### Associates in Arts Degree in Geography at Santa Barbara City College 
  August 2017-May 2020
- rmarkdown:
-### IN PROGRESS Bachelor of Science in Physical Geography at University of California, Santa Barbara
+ 
+### <span style="color:seagreen">IN PROGRESS</span> Bachelor of Science in Physical Geography at University of California, Santa Barbara
 September 2020-June 2022
 #
 
@@ -43,6 +43,6 @@ Spring 2020
 
 #### - Designed Swimwear 
 #### - Managed financials 
-#### - Developed and maintained websit and social media
+#### - Developed and maintained website and social media
 #### - Managed inventory and internet sales 
 
