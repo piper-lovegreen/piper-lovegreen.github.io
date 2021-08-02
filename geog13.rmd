@@ -10,7 +10,7 @@ This is my portfolio. This began with a GIS course based in R, in summer 2021. H
 - I am now able capable of customizing a website 
 
 
-#### [2.Covid-19](lab-02.html)
+#### [2.Covid-19](geog-13-labs/docs/lab-02.html)
 In this lab I learned how to analyze Covid-19 data. The data for Covid-19 is from NY Times.  
 
 Skills Learned:
