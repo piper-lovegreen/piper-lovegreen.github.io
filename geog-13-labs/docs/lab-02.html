@@ -186,7 +186,9 @@ covid= read_csv(url)
 landDate= read_csv(&quot;~/Desktop/github/piper-lovegreen.github.io/geog-13-labs/data/landdata-states.csv&quot;)
 
 popEst= read_excel(&quot;~/Desktop/github/piper-lovegreen.github.io/geog-13-labs/data/PopulationEstimates.xls&quot;, skip=2)</code></pre>
-<p>#Question 1 Part I</p>
+</div>
+<div id="question-1-part-i" class="section level1">
+<h1>Question 1 Part I</h1>
 <pre class="r"><code>table_1 = covid %&gt;% 
  filter(state == &quot;California&quot;) %&gt;% 
  group_by(county, state) %&gt;% 

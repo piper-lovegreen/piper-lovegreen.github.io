@@ -30,7 +30,7 @@ popEst= read_excel("~/Desktop/github/piper-lovegreen.github.io/geog-13-labs/data
 
 ```
 
-#Question 1 Part I
+# Question 1 Part I
 
 ```{r}
 table_1 = covid %>% 

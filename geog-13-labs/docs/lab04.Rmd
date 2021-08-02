@@ -124,6 +124,9 @@ kableExtra::kable_styling("basic", full_width = TRUE, font_size = 14)
 The MAUP,  the modifiable area unit problem, affects point-based measures that are aggregated into districts. This table shows Equal Area Square Coverage, which should line up well with MUAP but it does not. This is similar to why hexagonal grid coverage does not accurately count counties. This is because counties do not reflect an equal area grid.  Both Delaunay triangulation and voronoi tessellation work over multipoint collections but voronoi is much more accurate at capturing the counties because they are defined by the perpendicular bisectors of the lines between all points.
 
 # Question 3
+
+## Unfortunately Question 3 and 4 are unable to work in their entirety due to errors with dam data, NID. But the code is there to see how it would be done if the dam data worked properly. 
+
 ```{r warning=FALSE}
 NID= read_excel("~/Desktop/github/piper-lovegreen.github.io/geog-13-labs/docs/lab04_data/NID2019_U.xlsx") %>% 
   filter(!is.na(LONGITUDE)) %>% 
@@ -142,11 +145,12 @@ HEX= PIP(NID, hex, 'ID')
 
 plot_PIP= function(data, title ){
   ggplot()+
-    geom_sf(data= data, aes(fill= n), size= 0.2, col= NA)+
+    geom_sf(data= data, aes(fill=n), size= 0.2, col= NA)+
     scale_fill_viridis_c()+
+     theme_void()+
     labs(title= title,
-         caption= paste(sum(data$n)))+
-         theme_void()
+         caption= paste(sum(data$n)))
+      
          
 }
 
@@ -163,7 +167,7 @@ Yet again Voronois Tessellation is the closet in accuracy to the actual US Count
 
 # Question 4
 I have chosen Recreation[R], Water Supply[S], Irrigation[I], Fire Protection[P]. I have hear that because humans have built so many dams that the wobble of Earth has shifted and we have shorter years. This might be an urban legend (no pun intended). I am curious about these 4 because they are heavily used by humans. I am blown away at the fact humans have made damns simply for recreation. There are a lot of negative impacts from dams so the fact that the purpose of the dam is for recreation is very sad. We are made up of water and need it to survive so I am curious how many damns are for water supply. Living in California which seems to be constantly on fire I would guess there would be many dams for fire protection.  
-# This last chunk will not work but here is my code:
+
 ```{r}
 NID_R= NID %>% 
   filter(grepl("R", NID$PURPOSES))

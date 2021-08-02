@@ -3,8 +3,7 @@ title: "Projects"
 --- 
 This is my portfolio. This began with a GIS course based in R, in summer 2021. Here you can see my code and what I am able to do. I hope you enjoy it as much as I did creating it. 
 
-## [Building a Project Webstite] 
-(https://github.com/piper-lovegreen/piper-lovegreen.github.io.git)
+## [Building a Project Webstite](https://github.com/piper-lovegreen/piper-lovegreen.github.io.git)
 
 - In this assignment I learned how to create a website through github using R
 - I learned how to troubleshoot when errors occurred 
@@ -13,7 +12,9 @@ This is my portfolio. This began with a GIS course based in R, in summer 2021. H
 
 #### [2.Covid-19](lab-02.html)
 In this lab I learned how to analyze Covid-19 data. The data for Covid-19 is from NY Times.  
+
 Skills Learned:
+
  - setting up a GitHub repository 
  
  - create faceted plots and ggplots
@@ -26,6 +27,7 @@ Skills Learned:
 
 #### [3. 100 mile Zone around US Border](geog-13-labs/docs/lab-03.html)
 In this lab I learned how to created buffers and calculate distances in the US from national, Canada, and Mexico borders. 
+
 Skills Learned:
 
  - changing data projections 
@@ -39,6 +41,7 @@ Skills Learned:
 
 #### [4. Tessellations & Point-in-Polygon](geog-13-labs/docs/lab04.html)
 In this lab I learned how to create different types of tessellations and grid coverages. 
+
 Skills Learned:
 
  - creating functions
