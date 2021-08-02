@@ -7,20 +7,26 @@ output:
     theme: journal
 ---
 
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, out.width = "75%", fig.align = 'center')
+```
 
 
 ```{r}
 library(tidyverse)
 library(sf)
 library(USAboundaries)
-
-library(kintr)
+library(ggplot2)
+library(ggthemes)
+library(knitr)
 library(leaflet)
 library(ggplot2)
 library(gghighlight)
 library(readxl)
-
+library(RTriangle)
+library(rmapshaper)
+library(units)
+library(viridis)
 ```
 
 # Question 1 
@@ -36,16 +42,11 @@ nrow(county_centroids)
 
 centroid_union = county_centroids %>% 
   st_union()
+
 centroid_union
-
-
-  
-```
-1.3
-```{r}
-
 boundary= counties %>% 
-  st_union() 
+  st_union() %>% 
+  ms_simplify(keep=0.08)
 
 voronois= st_voronoi(centroid_union) %>% 
    st_cast() %>%
@@ -53,52 +54,152 @@ voronois= st_voronoi(centroid_union) %>%
   mutate(ID= 1:n()) %>% 
   st_intersection(boundary)
 
-plot(voronois)
+plot(voronois)  
 
+triangle= st_triangulate(centroid_union)%>% 
+   st_cast() %>%
+  st_as_sf() %>% 
+  mutate(ID= 1:n()) %>% 
+  st_intersection(boundary)
+plot(triangle)
 
+gridded= st_make_grid(centroid_union, n=70) %>% 
+   st_cast() %>%
+  st_as_sf() %>% 
+  mutate(ID= 1:n()) %>% 
+  st_intersection(boundary)
+plot(gridded)
+
+hex= st_make_grid(centroid_union, square=FALSE, n=70) %>% 
+   st_cast() %>%
+  st_as_sf() %>% 
+  mutate(ID= 1:n()) %>% 
+  st_intersection(boundary)
+
+plot(hex)
+
+plot_gg = function(data, title) {
+  ggplot()+
+    geom_sf(data= data, fill= "white", border= "navy", alpha= 0.9, size=0.2)+
+    labs(title= title,
+         caption= paste(nrow(data)))+
+    theme_void()
+}
+plot_gg(counties, title= "Continental USA Counties")
+plot_gg(voronois, title= "Voronois Tesselation of Continental USA")
+plot_gg(triangle, title= "Delauny Triangulation of Continental USA")
+plot_gg(gridded, title= "Equal Area Square Coverage of Continental USA" )
+plot_gg(hex, title= "Hexagonal Grid Coverage of Continental USA" )
 ```
 
-question 3
+
+# Question 2 
 ```{r}
-greeting= function(name){
-  cast("Hi my name is piper", name)
+sum_tess= function(data, description){
+  area= st_area(data)  
+  area= set_units(area,"km^2") 
+    area= as.numeric(area)
+    data.frame(Attributes= c("Description", "Number of Features ", "Mean Area of Features[km^2]", "Standard Deviation of Features", "Total Area [km^2]"), Values= c(description, nrow(data), mean(area), sd(area), sum(area)))
 }
 
-#name is the variable you are interested in brackets are what you are trying to do to that function 
+sum_tess(counties,"Continental USA Counties")
+sum_tess(voronois, "Voronois Tesselation of Continental USA")
+sum_tess(triangle,  "Delauny Triangulation of Continental USA")
+sum_tess(gridded,  "Equal Area Square Coverage of Continental USA" )
+sum_tess(hex, "Hexagonal Grid Coverage of Continental USA" )
+
+tess_summary = bind_rows(
+  sum_tess(counties,"Continental USA Counties"),
+  sum_tess(voronois, "Voronois Tesselation of Continental USA"),
+sum_tess(triangle,  "Delauny Triangulation of Continental USA"),
+sum_tess(gridded,  "Equal Area Square Coverage of Continental USA" ),
+sum_tess(hex, "Hexagonal Grid Coverage of Continental USA" ))
+
+knitr::kable(tess_summary,
+              caption= "Tesselations, Coverages, and Raw Counties of Continental USA") %>% 
+kableExtra::kable_styling("basic", full_width = TRUE, font_size = 14)
 ```
+
+## 2.5 Table Explanation 
+The MAUP,  the modifiable area unit problem, affects point-based measures that are aggregated into districts. This table shows Equal Area Square Coverage, which should line up well with MUAP but it does not. This is similar to why hexagonal grid coverage does not accurately count counties. This is because counties do not reflect an equal area grid.  Both Delaunay triangulation and voronoi tessellation work over multipoint collections but voronoi is much more accurate at capturing the counties because they are defined by the perpendicular bisectors of the lines between all points.
+
+# Question 3
 ```{r warning=FALSE}
-NID = read_excel("../data/NID2019_U.xlsx") %>% 
+NID= read_excel("~/Desktop/github/piper-lovegreen.github.io/geog-13-labs/docs/lab04_data/NID2019_U.xlsx") %>% 
   filter(!is.na(LONGITUDE)) %>% 
   filter(!is.na(LATITUDE)) %>% 
   st_as_sf(coords= c("LONGITUDE", "LATITUDE"), crs= 4326) %>% 
-  st_transform(5070)
+  st_transform(5070) 
   
-NID
-```
-
-3.2
-```{r}
-PIP= function(points, polygons, ID){
+PIP= function(points, polygons, ID) {
   st_join(polygons, points) %>% 
-   dplyr::count(.data[['ID']])
-  }
-
+   dplyr::count(data(ID))}
+CON= PIP(NID, counties, 'ID')
 VOR= PIP(NID, voronois, 'ID')
+TRI= PIP(NID, triangle, 'ID')
+GRI= PIP(NID, gridded, 'ID' )
+HEX= PIP(NID, hex, 'ID')
 
-
-```
-
-```{r}
 plot_PIP= function(data, title ){
   ggplot()+
-    geom_sf(data= data, aes(fill=n), size=.2, col=NA)+
+    geom_sf(data= data, aes(fill= n), size= 0.2, col= NA)+
     scale_fill_viridis_c()+
-    theme_void()+
-    labs(title=title, caption= sum(n))
-  #figure out the caption part it is in question 
+    labs(title= title,
+         caption= paste(sum(data$n)))+
+         theme_void()
+         
 }
-plot_PIP(Vor, "Voronoi Tessellation")
+
+plot_PIP(CON, "Continental USA Counties")
+plot_PIP(VOR, "Voronois Tesselation of Continental USA")
+plot_PIP(TRI,  "Delauny Triangulation of Continental USA")
+plot_PIP(GRI,  "Equal Area Square Coverage of Continental USA" )
+plot_PIP(HEX, "Hexagonal Grid Coverage of Continental USA" )
+
 ```
+
+## 3.6 Explanation of the Plots
+Yet again Voronois Tessellation is the closet in accuracy to the actual US Counties plot. Both grid coverage's look very similar. 
+
+# Question 4
+I have chosen Recreation[R], Water Supply[S], Irrigation[I], Fire Protection[P]. I have hear that because humans have built so many dams that the wobble of Earth has shifted and we have shorter years. This might be an urban legend (no pun intended). I am curious about these 4 because they are heavily used by humans. I am blown away at the fact humans have made damns simply for recreation. There are a lot of negative impacts from dams so the fact that the purpose of the dam is for recreation is very sad. We are made up of water and need it to survive so I am curious how many damns are for water supply. Living in California which seems to be constantly on fire I would guess there would be many dams for fire protection.  
+# This last chunk will not work but here is my code:
+```{r}
+NID_R= NID %>% 
+  filter(grepl("R", NID$PURPOSES))
+R= PIP(NID_R, voronois, 'ID')
+  
+NID_S= NID %>% 
+  filter(grepl("S", NID$PURPOSES))
+S= PIP(NID_S, voronois, 'ID')
+
+NID_I= NID %>% 
+  filter(grepl("I", NID$PURPOSES))
+I= PIP(NID_I, voronois, 'ID')
+
+NID_P= NID %>% 
+  filter(grepl("P", NID$PURPOSES))
+P= PIP(NID_P, voronois, 'ID')
+
+plot_NIDPIP= function(data, title ){
+  ggplot()+
+    geom_sf(data= data, aes(fill= n), size= 0.2, col= NA)+
+   gghighlight(n>(mean(data$n) + sd(data$n)))+
+    scale_fill_viridis_c()+
+    labs(title= title,
+         caption= paste(sum(data$n))+
+         theme_void()) 
+         
+}
+
+plot_NIDPIP(R, "Recreation")
+plot_NIDPIP(S, "Water Supply")
+plot_NIDPIP(I, "Irrigation")
+plot_NIDPIP(P, "Fire Protection")
+```
+
+
+
 
 
 
