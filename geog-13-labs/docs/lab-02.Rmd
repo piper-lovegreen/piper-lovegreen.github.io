@@ -6,7 +6,9 @@ output:
   html_document:
     theme: journal
 ---
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, out.width = "75%", fig.align = 'center')
+```
 
 # Libraries
 ```{r} 
@@ -22,9 +24,9 @@ library(zoo)
 url= 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv'
 covid= read_csv(url)
 
-landDate= read_csv("/Users/piperlovegreen/Desktop/github/geog-13-labs/data/landdata-states.csv")
+landDate= read_csv("~/Desktop/github/piper-lovegreen.github.io/geog-13-labs/data/landdata-states.csv")
 
-popEst= read_excel("/Users/piperlovegreen/Desktop/github/geog-13-labs/data/PopulationEstimates.xls", skip=2)
+popEst= read_excel("~/Desktop/github/piper-lovegreen.github.io/geog-13-labs/data/PopulationEstimates.xls", skip=2)
 
 ```
 
@@ -46,7 +48,11 @@ table_2 = covid %>%
  mutate(diff = max_cases-min_cases) %>% 
  ungroup() %>%  
  slice_max(diff, n=5)  
- 
+
+safe_counties= covid %>% 
+  filter(state == "California") %>% 
+ group_by(county) %>% 
+slice_min(cases, n=5)
  
 knitr::kable(table_1,
               caption= "Cumulative Covid-19 Cases in California",
@@ -61,11 +67,10 @@ knitr::kable(table_2,
 ```
 # Question 1 Part II
 ```{r}
-pop= popEst %>% 
-  select(fips = FIPStxt, population= "POP_ESTIMATE_2019") 
- 
-  
-copop_join= inner_join(covid, pop, by = 'fips')
+pop = popEst %>% 
+  select(fips = "FIPStxt", population= "POP_ESTIMATE_2019") 
+
+copop_join= inner_join(covid, pop, by = "fips")
 
 
 table_1.1 = copop_join %>% 
@@ -82,20 +87,21 @@ table_2.1 = copop_join %>%
  mutate(diff = max_cases-min_cases) %>% 
  ungroup() %>%  
  mutate(perCap = diff/population) %>% 
- slice_max(perCap, n=5)
+ slice_max(perCap, n=5) %>% 
+ungroup()
 
 
 
 
 knitr::kable(table_1.1,
               caption= "Cumulative Covid-19 Cases in California Per Capita",
-              col.names= c("county", "cases"),
+              col.names= c("date", "county", "state", "fips", "cases", "deaths", "population", "perCapita"),
               format.args= list(big.mark= ".")) 
 
 knitr::kable(table_2.1,
               caption= "New Covid-19 Cases in California Per Capita",
-              col.names= c("county", "cases"),
-              format.args= list(big.mark= ".")) %>% 
+              col.names= c("county", "state", "min_cases", "max_cases", "population", "diff", "perCap"),
+              format.args= list(big.mark= "."))
               
               
 
@@ -104,7 +110,8 @@ knitr::kable(table_2.1,
 # Question 2 Part I
 
 ```{r}
-states.of.interest <- c("New York", "California", "Louisiana", "Florida")
+
+states.of.interest = c("New York", "California", "Louisiana", "Florida")
 StateLevel <- covid %>% 
  filter(state %in% states.of.interest) %>% 
  group_by(state, date) %>% 
@@ -125,29 +132,25 @@ ggplot(data= StateLevel, aes(x=date, y= daily_new_cases)) +
 ```
 # Question 2 Part II
 ```{r}
-states.of.interest <- c("New York", "California", "Louisiana", "Florida")
-stateDC <- copop_join %>% 
- filter(state %in% states.of.interest) %>% 
- group_by(state, date) %>% 
- summarise(cases= sum(cases, na.rm= TRUE)) %>% 
- mutate(daily_new_cases= cases-lag(cases), RollMean7= rollmean(daily_new_cases, 7,fill= NA, align="right")) %>% 
- ungroup() 
+states= data.frame(state_abb= state.abb, region=state.region, state=state.name)
+state_abb_join= inner_join(StateLevel, states, by= "state")
+percap_state= inner_join(popEst, state_abb_join, by= c("State"= "state_abb"))
 
+state_per_cap= percap_state %>% 
+  mutate(newcases_percap= daily_new_cases/ POP_ESTIMATE_2019,
+         mean_percap= cases / POP_ESTIMATE_2019) %>% 
+  select(State, POP_ESTIMATE_2019, date, cases, daily_new_cases, newcases_percap, mean_percap)
 
-copop_join %>% 
-  filter(population) %>% 
-  mutate(PerCapita= daily_new_cases/population)
-
-
-ggplot(data= cov_pop, aes(x=date, y= PerCapita)) +
- geom_line(aes(col=state)) +
- facet_wrap(~state)+
- labs(x= "Date", y=" Covid-19 Cases per Capita",
-          title = "Covid-19 Cases per Capita in CA, FL, LA, NY",
-       subtitle = "Data from NY Times",
-       caption = "Lab 02") +
-  theme(axis.text.x = element_text(angle = 90))
-    
+ggplot(state_per_cap, aes(x= date, y= newcases_percap))+
+  geom_col(aes(y=newcases_percap), col= NA, fill="darkorchid")+
+  geom_line(aes(y=mean_percap, col= State))+
+  facet_wrap(~State)+
+  labs(title= "Covid-19 Cases Per Capita",
+       subtitle= "Daily" )+
+  ylim(0,100)+
+  labs(x = "Date", y= "New Covid-19 Cases",
+       caption= "Data from NY Times")+
+  theme_minimal()
 ```
 
-# Question 3 (Extra Credit)
+
